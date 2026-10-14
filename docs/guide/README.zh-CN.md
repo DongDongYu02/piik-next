@@ -9,6 +9,7 @@
 
 | 我想…… | 从这里开始 |
 | --- | --- |
+| 大家同时共享屏幕 | [浏览器多人共享](./multi-screen.zh-CN.md)，本二次开发版本支持 2–4 人。 |
 | 看朋友的分享 | [打开邀请链接](./getting-started.zh-CN.md#加入朋友的房间)，无须安装。 |
 | 分享自己的屏幕 | [下载 Piik App](https://piik.tv/?lang=zh-CN#download)，再按 [App 使用步骤](./getting-started.zh-CN.md#用-piik-app-分享)操作。 |
 | 免安装使用 | 打开[在线版](https://demo.piik.tv)，参阅[在线版教程](./getting-started.zh-CN.md#使用在线版)。 |

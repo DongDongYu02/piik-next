@@ -376,3 +376,19 @@ infers a physical bottleneck nor ranks routes by configured quality ceilings.
 Web pages cannot guarantee Host background capture, mobile background playback,
 or relay execution after Browser/OS suspension. Those remain physical lifecycle
 boundaries, not keepalive features.
+
+## Browser Multi-Screen Capture
+
+The explicit small-room multi-screen mode uses existing Browser display capture
+with a 1080p, 60 fps request, reusing the existing `1080p60` profile for capture
+and sender parameters. P2P has an 8 Mbps video ceiling per direct copy, with at
+most three copies per publisher. SFU reuses the existing Browser publisher: its
+highest encoding has an 8 Mbps ceiling and its half-size lower encoding has a
+2 Mbps ceiling, so the combined configured video ceiling can reach 10 Mbps,
+excluding audio and transport overhead. One SFU upload connection is not a
+one-encode guarantee or an aggregate 8 Mbps hard cap.
+Browser WebRTC and the existing Pion/LiveKit SFU own encoding, forwarding and
+adaptation. These bounded defaults target simultaneous
+viewing of up to four sources; they are not a promise of performance on every
+device or network. Native App capture, microphones, advanced quality controls
+and browser-local encoding pooling are outside this first version.

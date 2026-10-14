@@ -124,6 +124,7 @@ func (s *Server) handleDisconnect(sess *session) {
 	if !s.sessions.Has(sess) {
 		return
 	}
+	s.removeMultiScreen(sess)
 	sess.clearAuthenticationTimer()
 	delete(s.senderQualityRateBySession, sess.sessionID)
 	s.sessions.Delete(sess)
@@ -215,6 +216,13 @@ func (s *Server) abandonRoom(roomID string) error {
 func (s *Server) closeRoom(closed room.ClosedRoom) {
 	s.clearRoomGraceTimers(closed.RoomID)
 	s.clearRoomViewerEvidence(closed.RoomID)
+	// Revoke multi-source authority and register preparation-aware drains before
+	// the legacy router retires every resource in this room's shared ledger.
+	for _, sessionID := range closed.SessionIDs {
+		if sess := s.sessionsByID[sessionID]; sess != nil {
+			s.removeMultiScreen(sess)
+		}
+	}
 	s.router.deleteRoom(closed.RoomID)
 	delete(s.shares, closed.RoomID)
 	for _, sessionID := range closed.SessionIDs {
@@ -269,6 +277,7 @@ func (s *Server) closeRevokedViewerSession(sessionID string) {
 	if sess == nil {
 		return
 	}
+	s.removeMultiScreen(sess)
 	if sess.sessionID == sessionID {
 		sess.clearAuthenticationTimer()
 		sess.revoked = true

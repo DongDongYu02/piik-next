@@ -21,6 +21,7 @@ type sfuDrainTask struct {
 	kind      drainKind
 	fence     sfu.SubscriptionFence
 	operation *drainOperation
+	wait      <-chan struct{} // Multi-source preparation must settle before physical close.
 }
 
 // drainOperation is the promise runSfuDrain tracked: done is closed after err
@@ -173,13 +174,17 @@ func (r *router) scheduleSfuSubscriptionDrain(fence sfu.SubscriptionFence) {
 }
 
 func (r *router) scheduleSfuDrain(kind drainKind, fence sfu.SubscriptionFence) {
+	r.scheduleSfuDrainAfter(kind, fence, nil)
+}
+
+func (r *router) scheduleSfuDrainAfter(kind drainKind, fence sfu.SubscriptionFence, wait <-chan struct{}) {
 	if r.sfu == nil {
 		return
 	}
 	key := fence
 	task, _ := r.sfuDrainTasks.Get(key)
 	if task == nil {
-		task = &sfuDrainTask{kind: kind, fence: fence}
+		task = &sfuDrainTask{kind: kind, fence: fence, wait: wait}
 		r.sfuDrainTasks.Set(key, task)
 	}
 	if task.operation == nil {
@@ -201,6 +206,9 @@ func (r *router) runSfuDrain(key sfu.SubscriptionFence, task *sfuDrainTask) *dra
 	task.operation = operation
 	r.inflight++
 	go func() {
+		if task.wait != nil {
+			<-task.wait
+		}
 		var err error
 		if task.kind == drainPublication {
 			err = fallback.media.ClosePublication(task.fence.ResourceFence)

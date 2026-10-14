@@ -1,0 +1,27 @@
+# Reference only: retain the existing 7761 server and its actual upstream.
+# Put this server inside Nginx's http configuration if creating a new site.
+server {
+    listen 7761 ssl;
+    server_name share.example.com;
+    ssl_certificate /etc/letsencrypt/live/share.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/share.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    access_log off;
+
+    location / {
+        proxy_pass http://127.0.0.1:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /signal {
+        proxy_pass http://127.0.0.1:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 3600s;
+    }
+}

@@ -174,6 +174,7 @@ type RuntimeCapabilities struct {
 	NatPrediction              bool `json:"natPrediction"`
 	RoomInteractions           bool `json:"roomInteractions,omitempty"`
 	HostRoomSession            bool `json:"hostRoomSession,omitempty"`
+	MultiScreenRoom1           bool `json:"multiScreenRoom1,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -186,7 +187,7 @@ func (v *RuntimeCapabilities) UnmarshalJSON(data []byte) error {
 	if present == nil {
 		return errors.New("runtime capabilities must be an object")
 	}
-	if err := present.optional("sfu", "sfuOnly", "roomInteractions", "hostRoomSession", "natPrediction", "connectionAttemptProgress4"); err != nil {
+	if err := present.optional("sfu", "sfuOnly", "roomInteractions", "hostRoomSession", "natPrediction", "connectionAttemptProgress4", "multiScreenRoom1"); err != nil {
 
 		return err
 	}
@@ -194,6 +195,7 @@ func (v *RuntimeCapabilities) UnmarshalJSON(data []byte) error {
 		"sfu": &v.Sfu, "sfuOnly": &v.SfuOnly, "natPrediction": &v.NatPrediction,
 		"connectionAttemptProgress4": &v.ConnectionAttemptProgress4,
 		"roomInteractions":           &v.RoomInteractions, "hostRoomSession": &v.HostRoomSession,
+		"multiScreenRoom1": &v.MultiScreenRoom1,
 	} {
 		if value, ok := present[key]; ok {
 			if err := json.Unmarshal(value, target); err != nil {

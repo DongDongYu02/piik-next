@@ -12,6 +12,7 @@ import (
 // TypeScript cloneFence/sameFence helpers are a plain copy and `==`.
 type ResourceFence struct {
 	RoomID                string
+	PublisherPeerID       string // Empty for the ordinary single-Host publication.
 	ShareGeneration       string
 	PublicationGeneration string
 }
@@ -103,7 +104,7 @@ func (admission *Admission) ReservePublication(fence ResourceFence) bool {
 	}
 	if room != nil {
 		for _, publication := range room.All() {
-			if publication.state == stateReserved {
+			if publication.state == stateReserved && publication.fence.PublisherPeerID == fence.PublisherPeerID {
 				return false
 			}
 		}
@@ -170,13 +171,13 @@ func (admission *Admission) CommitPublication(fence ResourceFence) ([]ResourceFe
 			break
 		}
 	}
-	if !reserved {
+	if !reserved && fence.PublisherPeerID == "" {
 		return nil, false
 	}
 
 	var draining []ResourceFence
 	for _, other := range room.All() {
-		if other == publication || other.state != stateCommitted {
+		if other == publication || other.state != stateCommitted || other.fence.PublisherPeerID != fence.PublisherPeerID {
 			continue
 		}
 		markDraining(other)
@@ -289,6 +290,16 @@ func (admission *Admission) CompleteDrain(fence ResourceFence) bool {
 }
 
 func (admission *Admission) BeginDrainRoom(roomID string) []ResourceFence {
+	return admission.beginDrainRoom(roomID, nil)
+}
+
+// BeginPublisherDrain retires only one source owner. The empty owner denotes
+// the ordinary Host graph, whose cleanup cannot retire multi-screen sources.
+func (admission *Admission) BeginPublisherDrain(roomID, publisherPeerID string) []ResourceFence {
+	return admission.beginDrainRoom(roomID, &publisherPeerID)
+}
+
+func (admission *Admission) beginDrainRoom(roomID string, publisherPeerID *string) []ResourceFence {
 	if roomID == "" {
 		panic("SFU resource room ID is invalid")
 	}
@@ -296,11 +307,12 @@ func (admission *Admission) BeginDrainRoom(roomID string) []ResourceFence {
 	if room == nil {
 		return nil
 	}
-	for _, publication := range room.All() {
-		markDraining(publication)
-	}
 	fences := make([]ResourceFence, 0, room.Len())
 	for _, publication := range room.All() {
+		if publisherPeerID != nil && publication.fence.PublisherPeerID != *publisherPeerID {
+			continue
+		}
+		markDraining(publication)
 		fences = append(fences, publication.fence)
 	}
 	return fences
@@ -349,12 +361,12 @@ func markDraining(publication *publicationEntry) {
 }
 
 func publicationKey(fence ResourceFence) string {
-	return fence.ShareGeneration + "\x00" + fence.PublicationGeneration
+	return fence.PublisherPeerID + "\x00" + fence.ShareGeneration + "\x00" + fence.PublicationGeneration
 }
 
 func assertFence(fence ResourceFence) {
 	if fence.RoomID == "" || fence.ShareGeneration == "" ||
-		fence.PublicationGeneration == "" {
+		fence.PublicationGeneration == "" || (fence.PublisherPeerID != "" && !protocol.ValidOpaqueID(fence.PublisherPeerID)) {
 		panic("SFU resource fence is invalid")
 	}
 }
@@ -378,6 +390,7 @@ var roomIDPattern = regexp.MustCompile(`^[1-9][0-9]{0,11}$`)
 
 func validResourceFence(fence ResourceFence) bool {
 	return roomIDPattern.MatchString(fence.RoomID) &&
+		(fence.PublisherPeerID == "" || protocol.ValidOpaqueID(fence.PublisherPeerID)) &&
 		protocol.ValidOpaqueID(fence.ShareGeneration) &&
 		protocol.ValidOpaqueID(fence.PublicationGeneration)
 }

@@ -1,0 +1,39 @@
+# Reference for a fresh installation. Upgrade an existing Compose service by
+# replacing only its image; keep its project, ports, environment and data mounts.
+name: piik
+
+services:
+  piik:
+    image: piik-multi-screen:development
+    build: .
+    restart: unless-stopped
+    stop_grace_period: 20s
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    env_file: .env
+    environment:
+      PIIK_ENV: production
+      LISTEN_HOST: 0.0.0.0
+      PORT: "8787"
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set PUBLIC_BASE_URL in .env}
+      SITE_ACCESS_PASSWORD: ${SITE_ACCESS_PASSWORD:?Set SITE_ACCESS_PASSWORD in .env}
+      SFU_UDP_PORT: "7882"
+      SFU_LISTEN_HOST: 0.0.0.0
+      SFU_PUBLIC_IP: ${SFU_PUBLIC_IP:?Set SFU_PUBLIC_IP in .env}
+      SFU_ONLY: "true"
+      STUN_URLS: ${STUN_URLS:?Set STUN_URLS in .env}
+      NAT_PREDICTION_ENABLED: "false"
+      ROOM_DATABASE_PATH: /home/nonroot/rooms.sqlite
+      PIIK_LOG_DIR: /home/nonroot/logs
+    ports:
+      - "127.0.0.1:8787:8787/tcp"
+      - "3478:3478/udp"
+      - "7882:7882/udp"
+    tmpfs:
+      - /tmp:size=64m,mode=1777,nodev,nosuid,noexec
+    volumes:
+      - piik-data:/home/nonroot
+
+volumes:
+  piik-data:

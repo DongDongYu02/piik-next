@@ -1,6 +1,6 @@
 # Project Memory
 
-Last updated: 2026-10-06
+Last updated: 2026-10-14
 
 Piik is private, low-latency screen sharing for one Host and up to 20
 authenticated friends. The current product surface is Web Host, Web Viewer, and
@@ -39,6 +39,10 @@ sibling outputs. [Status](./status.md) owns the remaining physical and release
 acceptance boundary; runtime release descriptors own deployed identity.
 The Local launcher keeps an optional user-chosen site-access password; leaving it
 blank keeps the self-contained site open.
+
+The local Browser extension adds a 2–4 person multi-screen room with independent
+publications, configured SFU or P2P without SFU. [Status](./status.md#browser-multi-screen-development)
+owns its development boundary; existing product standards own its behavior.
 
 ## Product Map
 

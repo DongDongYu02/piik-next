@@ -10,6 +10,7 @@ This page also indexes developer and maintainer references.
 
 | Task | Guide |
 | --- | --- |
+| Share multiple screens in one room | [Multi-screen rooms](./guide/multi-screen.md) · [中文指南](./guide/multi-screen.zh-CN.md) |
 | Use Piik online | [Open the online site](https://demo.piik.tv) · [Online sharing guide](./guide/getting-started.md#use-piik-online) |
 | Watch a friend or share my first screen | [Getting started](./guide/getting-started.md) |
 | Choose an App mode or fix sound and connection trouble | [First-use help](./guide/getting-started.md#choose-an-app-mode) |
@@ -79,6 +80,30 @@ The main verification commands are:
 npm run check
 npm run check:go
 ```
+
+For the browser multi-screen extension, `npm run gate:multi-screen` checks four
+simultaneous synthetic screen sources, independent stop/restart, participant
+replacement and the four-person limit. It requires Chrome or Edge; set
+`CHROME_PATH` to its executable when it is outside a standard
+installation path. The gate uses isolated browser profiles, temporary rooms and
+canvas video, without capturing your desktop.
+Set `PIIK_MULTI_SCREEN_GATE_SFU=1` to run the same checks with forced embedded
+SFU media. This also proves one upload connection per publisher and UDP cleanup.
+
+The default source is 640×360 at 15 fps and verifies lifecycle behavior, not
+1080p60 delivery. Set `PIIK_MULTI_SCREEN_GATE_STRESS=1` for the single-host
+1080p60 workload; it writes separate stress evidence. P2P showed downscaling
+and a newcomer publication stall; SFU stress also timed out at newcomer entry
+with local memory exhaustion. Real-device 1080p60
+acceptance remains open. See the [Windows LAN guide](./guide/multi-screen.md#start-a-windows-lan-preview)
+for the development HTTPS launcher and client certificate setup.
+
+After staging the development changes, `npm run package:multi-screen-dev` builds
+and verifies separate Linux amd64/arm64 Docker archives under
+`build/multi-screen-docker/`. Each records the base commit, staged patch and file
+checksums. These are development snapshots, not published releases; the
+[Ubuntu Docker guide](../deploy/multi-screen/README.zh-CN.md) covers image
+replacement with existing ports and data, and rollback.
 
 Use the [naming and copy guide](./standards/naming.md) for product names,
 commands, role labels and Chinese/English voice.

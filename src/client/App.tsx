@@ -56,7 +56,8 @@ if (clientLaunchBootstrap?.presentation) {
     clientLaunchBootstrap.presentation.explicit?.includes("copy") ?? false);
 }
 const clientAccessBootstrap = clientLaunchBootstrap?.accessToken ?? null;
-const initialViewerRoute = appRoute.kind === "viewer" ? readViewerRoute() : null;
+const initialViewerRoute = appRoute.kind === "viewer" || appRoute.kind === "multi-viewer" ? readViewerRoute() : null;
+const MultiScreenPage = lazy(() => import("./pages/MultiScreenPage").then(module => ({ default: module.MultiScreenPage })));
 const hostPageModule =
   appRoute.kind === "host" ? import("./pages/HostPage") : null;
 const joinPageModule =
@@ -148,7 +149,7 @@ class RouteBoundary extends Component<
 function AppRoute() {
   const [viewerRoute, setViewerRoute] = useState(initialViewerRoute);
   useEffect(() => {
-    if (appRoute.kind === "viewer") return watchViewerInvites(setViewerRoute);
+    if (appRoute.kind === "viewer" || appRoute.kind === "multi-viewer") return watchViewerInvites(setViewerRoute);
   }, []);
   if (PlaybackPreviewPage && window.location.pathname === "/__playback-preview") {
     return <PlaybackPreviewPage />;
@@ -162,6 +163,12 @@ function AppRoute() {
   if (appRoute.kind === "client") {
     return <AppLauncherPage />;
   }
+  if (appRoute.kind === "multi-viewer" && viewerRoute) {
+    return viewerRoute.viewerGrant
+      ? <MultiScreenEntry key={viewerRoute.viewerGrant} route={viewerRoute} />
+      : <SiteAccessGate surface="multi" viewerRoute={viewerRoute} />;
+  }
+  if (appRoute.kind === "multi") return <SiteAccessGate surface="multi" />;
   if (appRoute.kind === "viewer" && viewerRoute) {
     return viewerRoute.viewerGrant ? (
       <ViewerEntry
@@ -200,6 +207,18 @@ function RouteLoader() {
       </main>
     </div>
   );
+}
+
+function MultiScreenEntry({ route }: { route: ViewerRoute }) {
+  const [available, setAvailable] = useState<boolean | null>(null);
+  useEffect(() => {
+    let active = true;
+    void getOptionalRuntimeCapabilities().then(capabilities => {
+      if (active) setAvailable(capabilities?.multiScreenRoom1 === true);
+    });
+    return () => { active = false; };
+  }, []);
+  return available === null ? <RouteLoader /> : <MultiScreenPage route={route} available={available} />;
 }
 
 // Invitation and room-code entry share discovery without making an invitation
@@ -274,7 +293,7 @@ function SiteAccessGate({
   surface,
   viewerRoute,
 }: {
-  surface: "host" | "join" | "viewer";
+  surface: "host" | "join" | "viewer" | "multi";
   viewerRoute?: ViewerRoute;
 }) {
   const { t, vis } = useCopy();
@@ -287,7 +306,7 @@ function SiteAccessGate({
   function loadAccess(password?: string) {
     return Promise.all([
       password ? authenticateSiteAccess(password) : getSiteAccess(),
-      surface === "host" ? getRuntimeCapabilities() : Promise.resolve(null),
+      surface === "host" || surface === "multi" ? getRuntimeCapabilities() : Promise.resolve(null),
     ]);
   }
 
@@ -387,6 +406,9 @@ function SiteAccessGate({
   }
 
   if (access.kind === "ready") {
+    if (surface === "multi") return <MultiScreenPage route={viewerRoute}
+      available={capabilities?.multiScreenRoom1 === true}
+      onAuthorizationRequired={() => setAccess({ kind: "required", error: t("gate.expired") })} />;
     if (surface === "viewer" && viewerRoute) {
       return (
         <ViewerEntry route={viewerRoute} />

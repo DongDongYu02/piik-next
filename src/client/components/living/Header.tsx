@@ -107,6 +107,10 @@ export function HeaderControls({ diagnosticControl }: { diagnosticControl?: Reac
   );
   return (
     <span className="lr-top-right lr-header-controls">
+      <a className="lr-btn" href="/multi" aria-label={t("multi.title")}>
+        <Glyph name="users" size={16} />
+        {vis ? null : <span className="lr-cap">{t("multi.title")}</span>}
+      </a>
       <LanguageControl />
       <Tooltip kind={theme === "dark" ? "hint-theme-light" : "hint-theme-dark"} text={vis ? undefined : themeTitle} place="below" align="end">
         {themeButton}

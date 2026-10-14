@@ -15,6 +15,14 @@
 </p>
 <p align="center">English · <a href="./README.zh-CN.md">简体中文</a></p>
 
+**Piik Next** is a development fork of [TNTcraftHIM/Piik](https://github.com/TNTcraftHIM/Piik).
+It adds browser-only `/multi` rooms for 2–4 people to share screens simultaneously,
+with embedded SFU forwarding or direct P2P, and a 1080p60 capture target.
+See the [multi-screen guide](./docs/guide/multi-screen.md) and
+[Ubuntu Docker deployment guide](./deploy/multi-screen/README.zh-CN.md).
+Physical multi-device 1080p60 acceptance remains pending. The website and download
+links above refer to the upstream project. The original MIT license is retained.
+
 Piik is a free, open-source screen sharing tool for private live streams with
 friends: games, movie nights, drawings and photos. Choose what to share and send
 an invitation. Your friends watch in their browsers. You can also self-host Piik

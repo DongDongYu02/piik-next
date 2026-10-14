@@ -275,3 +275,28 @@ A native Viewer terminates only its P2P upstream, reserves one Browser playback
 edge, and reuses compatible H.264/VP8/Opus for bounded children, deriving a missing
 lower output only on direct-child demand. Browser keeps SFU subscription,
 route revisions, frame proof, and fallback.
+
+## Browser Multi-Screen Transport
+
+For the explicit `/multi` Browser mode, up to four enrolled participants use the
+embedded SFU when that runtime is configured, including `SFU_ONLY=true` sites.
+Each publisher has one upstream publication connection; the server forwards it
+to at most three other enrolled participants, each receiving at most three
+publications. The existing Pion/LiveKit media components own forwarding and
+adaptation. This mode does not use the original single-source route controller,
+peer relay, NAT prediction or Native App bridge.
+
+Without an SFU runtime, one publication has one send-only connection to each
+other participant, bounded to three outbound copies per publisher. It uses the
+configured ordinary ICE servers and Browser congestion control. The configured
+runtime selects the room's transport; there is no parallel P2P/SFU graph or
+application transport switch on failure. SFU needs a usable UDP path to its
+advertised server address; P2P needs a usable direct path. Neither path provides
+TURN or TCP media when UDP is blocked.
+
+Room-authenticated signaling owns publication generations and same-room
+recipient admission, including every SFU publication and subscription. A new
+source generation retires only that source's media; late SDP and ICE cannot
+affect its replacement. Stopping a local publication preserves the participant's
+incoming streams and all other publications. Session loss, replacement or
+revocation retires the exact participant's SFU resources as well as P2P edges.

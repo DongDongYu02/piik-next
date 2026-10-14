@@ -15,6 +15,12 @@
 </p>
 <p align="center"><a href="./README.md">English</a> · 简体中文</p>
 
+**Piik Next** 是基于 [TNTcraftHIM/Piik](https://github.com/TNTcraftHIM/Piik) 的开发分支。
+本版增加浏览器 `/multi` 房间，支持 2–4 人同时共享和互看，使用内嵌 SFU 转发或
+P2P 直连，采集目标为 1080p60。使用方法见[多人共享指南](./docs/guide/multi-screen.zh-CN.md)，
+部署方法见[Ubuntu Docker 说明](./deploy/multi-screen/README.zh-CN.md)。
+真实多机稳定 1080p60 尚待验收；上面的官网和下载链接仍指向原项目，保留原 MIT 许可。
+
 Piik 是一个免费开源的私密屏幕共享工具，适合游戏直播、一起看电影、展示绘画或分享照片。
 选择画面，把邀请链接发给朋友，对方用浏览器即可观看。也支持自部署，搭建自己的 Piik 站点。
 

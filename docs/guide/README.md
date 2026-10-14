@@ -9,6 +9,7 @@ Choose a guide for what you want to do.
 
 | I want to… | Start here |
 | --- | --- |
+| Share screens with each other | [Browser shared rooms](./multi-screen.md), for 2–4 people in this development version. |
 | Watch a friend | [Open an invitation](./getting-started.md#join-a-friends-room); no installation needed. |
 | Share my screen | [Download Piik App](https://piik.tv/?lang=en#download), then follow [the App steps](./getting-started.md#share-with-piik-app). |
 | Use Piik without installing | [Open the online site](https://demo.piik.tv) and follow [the online guide](./getting-started.md#use-piik-online). |

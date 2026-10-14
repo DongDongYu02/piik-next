@@ -1,14 +1,21 @@
 # Current TODO Ledger
 
-Last reviewed: 2026-10-06
+Last reviewed: 2026-10-14
 
 Only **Now** is executable. Product modules own behavior; Git/PRs own completed
 history. A parked idea is not implementation authority.
 
 ## Now
 
-No active implementation work. Deferred proposals and evidence-dependent reports
-remain below; release delivery is tracked by the pipeline and deployment records.
+- [ ] **Browser multi-screen public deployment.** The embedded SFU now supports
+  four independent current-session publications and three subscriptions per
+  participant, including SFU-only sites. Local four-browser media/lifecycle and
+  authorization checks cover the implementation; complete the public
+  deployment and two-device screen-capture verification, saving the original
+  image/configuration/data for rollback. The operator will replace the original
+  version on Ubuntu Docker with its existing ports;
+  development packages cover amd64 and arm64. Public proxy/UDP reachability and
+  actual multi-device behavior still require operator evidence.
 
 ## Held By Owner
 
@@ -63,6 +70,16 @@ These proposals remain deferred beyond the accepted interaction phase.
 These reports remain unmatched. A local repair or successful test is not proof
 of a reporter's cause; research owns the completed experiments and their limits.
 
+- [ ] **Browser multi-screen 1080p60 on separate LAN computers.** Capture and
+  senders target 1080p60; [media quality](./standards/media-quality.md#browser-multi-screen-capture)
+  owns P2P/SFU encoding ceilings. Low-load P2P synthetic
+  and SFU four-person lifecycle checks pass. The single-host P2P 12-encoder/12-decoder stress
+  showed downscaling, a newcomer publication stall and statistics sampling
+  timeouts; its root cause is not established. SFU 1080p60 stress also timed out
+  at newcomer entry with local memory exhaustion. Verify real capture, sustained
+  resolution/cadence and leave/rejoin across 2–4 physical computers before
+  claiming stable 1080p60 delivery. The [LAN guide](./guide/multi-screen.md#start-a-windows-lan-preview)
+  owns setup; ignored `build/gates/multi-screen` output owns local stress evidence.
 - [ ] **Intermittent native capture self-test failure.** The worker check now
   records its phase, original exception and per-output progress. A local pass
   does not explain the earlier CI failure; use the next failed run's diagnostics

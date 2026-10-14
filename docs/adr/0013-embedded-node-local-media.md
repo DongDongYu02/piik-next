@@ -67,6 +67,17 @@ handle their own derivation. Framework estimates must distinguish desired,
 available and actually delivered output so missing high input cannot be
 mistaken for a healthy high-quality path.
 
+For the accepted development-only Browser multi-screen extension, clause 6's
+single-Host limit remains the original broadcasting contract. The explicit
+four-participant mode instead permits one independently authorized publication
+per enrolled participant and at most three subscriptions per participant through
+the same embedded Pion/LiveKit adapter. Each publication retains its own aggregate
+upstream budget and source-generation lifetime. This extends source admission;
+it adds no server transcoding, custom adaptation policy or Native SFU behavior.
+[Status](../status.md#browser-multi-screen-development) owns implementation and
+acceptance evidence; [routing](../standards/routing-transport.md#browser-multi-screen-transport)
+owns transport selection.
+
 ## Consequences And Release Boundary
 
 The Native integration uses one complete stock WebRTC encoding/adaptation

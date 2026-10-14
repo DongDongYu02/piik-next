@@ -279,3 +279,22 @@ and physical non-Windows native acceptance remain later platform work.
 - [WHATWG Web Storage](https://html.spec.whatwg.org/multipage/webstorage.html)
 - [ECMAScript string normalization](https://tc39.es/ecma262/multipage/text-processing.html#sec-string.prototype.normalize)
 - [Unicode UAX #31](https://www.unicode.org/reports/tr31/)
+
+## Multi-Screen Browser Workspace
+
+The `/multi` entry creates or joins a room. Each participant chooses when to
+share or stop their own screen; the room does not start capture on anyone’s
+behalf. A responsive grid shows every enrolled participant, with an idle card
+when they are not sharing. Enlarging a card is local and returning to the grid
+restores all cards. Each source has a separate video element and current-frame
+proof. Local previews are always muted; remote videos begin muted and use
+native playback and audio controls. Screen audio is optional browser capture;
+this mode adds no microphone or room voice. The page identifies direct media or
+server forwarding from the configured transport, and reports current-frame waits
+per source; a connected room or configured SFU alone does not prove video readiness.
+
+Signaling loss retires this mode’s connections, stops local capture and cancels
+any pending capture intent. Rejoining does not restart capture: the participant
+must select Share again. Leaving retires all owned media while preserving the
+tab’s room credential for explicit reentry. Original Host/Viewer playback rules
+above continue to apply to single-source rooms.

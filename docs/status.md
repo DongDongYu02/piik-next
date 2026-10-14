@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-10-06
+Last updated: 2026-10-14
 
 This is the compact execution/deployment index. Product modules own behavior,
 [verification status](./verification-status.md) owns unresolved physical limits,
@@ -51,6 +51,32 @@ Room voice is outside the product plan; Host microphone commentary remains.
 These features are published; physical device limits remain open.
 Release artifacts and operator deployment records own delivery completion;
 [TODO](./todo.md#now) owns remaining work.
+
+## Browser Multi-Screen Development
+
+This checkout adds an explicit browser-only `/multi` mode for 2–4 participants.
+Room ownership and invitations are shared with the existing service; each enrolled
+participant can independently publish one screen and view the other sources.
+The requested Browser profile is now 1080p60. A Windows development launcher adds
+LAN HTTP viewing and certificate-based HTTPS sharing; the Go core remains the
+application authority behind that development proxy. Configured multi-source
+embedded SFU forwarding is implemented, including SFU-only sites; without that
+runtime the mode retains direct P2P. Local four-browser SFU lifecycle evidence
+covers 12 decoded remote screens, one upload connection per source, independent
+stop/restart, newcomer entry, capacity rejection and resource cleanup. Public
+deployment and physical multi-device acceptance remain pending. Ubuntu Docker
+development packaging targets amd64 and arm64. The operator will replace the
+original Docker image while retaining its HTTPS/SFU ports, configuration and
+data volume, with a saved image and data backup for rollback.
+The [transport owner](./standards/routing-transport.md#browser-multi-screen-transport)
+and [usage guide](./guide/multi-screen.md) describe its scope.
+Low-load P2P synthetic four-participant browser evidence covers simultaneous decoded video,
+independent stop/restart, departure/newcomer and capacity rejection; physical
+devices and cross-network behavior remain unverified. Single-host P2P 1080p60 stress
+showed downscaling and a newcomer publication stall. SFU 1080p60 stress timed out
+at newcomer entry with local memory exhaustion. Neither establishes stable
+four-device 1080p60 delivery. This is a local development extension and
+does not declare a new public release.
 
 ## Current Work
 

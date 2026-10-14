@@ -409,11 +409,15 @@ async function stopProcessTree(
   if (!processRunning(child)) return true;
   if (await waitForExit(child, 2_000)) return true;
   if (process.platform === "win32" && child.pid !== undefined) {
-    await runBounded(
+    const terminated = await runBounded(
       "taskkill.exe",
       ["/PID", String(child.pid), "/T", "/F"],
       5_000,
     );
+    // WMI-backed tree termination can fail while the owned native handle is valid.
+    if (!terminated && processRunning(child)) {
+      try { child.kill("SIGKILL"); } catch { return false; }
+    }
   } else {
     child.kill("SIGTERM");
     if (await waitForExit(child, 2_000)) return true;

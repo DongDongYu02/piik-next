@@ -56,6 +56,8 @@ export type AppRoute =
   | { kind: "client" }
   | { kind: "host" }
   | { kind: "join" }
+  | { kind: "multi" }
+  | { kind: "multi-viewer"; roomId: string }
   | { kind: "viewer"; roomId: string }
   | { kind: "malformed-room" }
   | { kind: "unknown" };
@@ -77,6 +79,10 @@ export function roomRouteForExplicitEntry(value: string): string | null {
 }
 
 export function parseAppRoute(pathname: string): AppRoute {
+  if (/^\/multi\/?$/.test(pathname)) return { kind: "multi" };
+  const multiMatch = pathname.match(/^\/multi\/r\/([1-9]\d{3})\/?$/);
+  if (multiMatch) return { kind: "multi-viewer", roomId: multiMatch[1]! };
+  if (pathname.startsWith("/multi/")) return { kind: "malformed-room" };
   if (/^\/client\/?$/.test(pathname)) {
     return { kind: "client" };
   }
@@ -455,7 +461,7 @@ function writeSessionValue(key: string, value: string): void {
 
 export function readViewerRoute(): ViewerRoute | null {
   const route = parseAppRoute(window.location.pathname);
-  if (route.kind !== "viewer") {
+  if (route.kind !== "viewer" && route.kind !== "multi-viewer") {
     return null;
   }
 
@@ -472,7 +478,9 @@ export function readViewerRoute(): ViewerRoute | null {
     } else {
       clearViewerGrant(roomId);
     }
-    window.history.replaceState(window.history.state, "", withBrowserDebug(`/r/${roomId}`));
+    window.history.replaceState(window.history.state, "", withBrowserDebug(
+      route.kind === "multi-viewer" ? `/multi/r/${roomId}` : `/r/${roomId}`,
+    ));
     return validGrant
       ? { roomId, viewerGrant: validGrant }
       : { roomId, invalidGrant: true };

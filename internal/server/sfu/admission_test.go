@@ -36,6 +36,59 @@ func TestSubscriptionDrainReleasesOnlyExactConnection(t *testing.T) {
 	}
 }
 
+func TestAdmissionMultiScreenOwnersReserveAndCommitIndependently(t *testing.T) {
+	admission := NewAdmission(AdmissionOptions{IngressCapacity: 4, EgressCapacity: 6})
+	first := ResourceFence{RoomID: "1234", PublisherPeerID: "publisher_first", ShareGeneration: "same_share_generation", PublicationGeneration: "same_publication_generation"}
+	second := first
+	second.PublisherPeerID = "publisher_second"
+	if !admission.ReservePublication(first) || !admission.ReservePublication(second) {
+		t.Fatal("independent sources cannot reserve the shared room")
+	}
+	for _, fence := range []ResourceFence{first, second} {
+		drained, ok := admission.CommitPublication(fence)
+		if !ok || len(drained) != 0 {
+			t.Fatal("source without recipients cannot commit independently")
+		}
+	}
+	replacement := first
+	replacement.PublicationGeneration = "replacement_generation"
+	if !admission.ReservePublication(replacement) {
+		t.Fatal("source replacement reservation failed")
+	}
+	drained, ok := admission.CommitPublication(replacement)
+	if !ok || !slices.Equal(drained, []ResourceFence{first}) || !admission.HasPublication(second) || admission.HasPublication(first) {
+		t.Fatal("source replacement retired a sibling owner")
+	}
+	expectUsage(t, admission, 3, 0)
+	if !admission.CompleteDrain(first) || !admission.HasPublication(replacement) {
+		t.Fatal("old source retirement changed its replacement")
+	}
+	malformed := second
+	malformed.PublisherPeerID = "not an opaque id"
+	expectPanic(t, "fence is invalid", func() { admission.ReservePublication(malformed) })
+}
+
+func TestAdmissionLegacyOwnerDrainPreservesIndependentSources(t *testing.T) {
+	admission := NewAdmission(AdmissionOptions{IngressCapacity: 3, EgressCapacity: 3})
+	legacy := publicationFence("1234", "legacy_publication_generation")
+	owned := legacy
+	owned.PublisherPeerID = "independent_publisher"
+	if !admission.ReservePublication(legacy) || !admission.ReservePublication(owned) {
+		t.Fatal("source reservations failed")
+	}
+	draining := admission.BeginPublisherDrain(legacy.RoomID, "")
+	if !slices.Equal(draining, []ResourceFence{legacy}) || admission.HasPublication(legacy) || !admission.HasPublication(owned) {
+		t.Fatal("legacy cleanup changed an independent source")
+	}
+	if !admission.CompleteDrain(legacy) {
+		t.Fatal("legacy exact cleanup failed")
+	}
+	expectUsage(t, admission, 1, 0)
+	if all := admission.BeginDrainRoom(owned.RoomID); !slices.Equal(all, []ResourceFence{owned}) {
+		t.Fatal("whole-room retirement did not include the independent source")
+	}
+}
+
 func publicationFence(roomID string, publicationGeneration string) ResourceFence {
 	return ResourceFence{
 		RoomID:                roomID,

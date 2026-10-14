@@ -552,6 +552,27 @@ describe("client session identity", () => {
     expect(readViewerGrant("8")).toBeNull();
   });
 
+  it("consumes a multi-screen invitation without switching to the single-screen route", () => {
+    const values = new Map<string, string>();
+    const replaceState = vi.fn();
+    const grant = `${"c".repeat(21)}g`;
+    vi.stubGlobal("window", {
+      location: new URL(`https://share.test/multi/r/1234#v=${grant}`),
+      history: { state: null, replaceState },
+      sessionStorage: {
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => values.set(key, value),
+        removeItem: (key: string) => values.delete(key),
+      },
+    });
+    expect(parseAppRoute("/multi")).toEqual({ kind: "multi" });
+    expect(parseAppRoute("/multi/r/1234")).toEqual({ kind: "multi-viewer", roomId: "1234" });
+    expect(readViewerRoute()).toEqual({ roomId: "1234", viewerGrant: grant });
+    expect(values.get("piik:viewer-grant:1234")).toBe(grant);
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/multi/r/1234");
+    expect(parseAppRoute("/multi/r/0000")).toEqual({ kind: "malformed-room" });
+  });
+
   it("fails malformed Viewer fragments closed without leaking across rooms", () => {
     const values = new Map<string, string>();
     const oldGrant = `${"d".repeat(21)}w`;

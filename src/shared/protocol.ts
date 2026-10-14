@@ -8,6 +8,9 @@ import { NAT_TRAVERSAL_PATHS } from "./nat-candidate.js";
 export const MAX_VIEWERS_PER_ROOM_LIMIT = 20;
 export const MAX_PARTICIPANTS_PER_ROOM_LIMIT = MAX_VIEWERS_PER_ROOM_LIMIT + 1;
 export const MAX_SIGNAL_BYTES = 64 * 1024;
+export const MAX_MULTI_SCREEN_PARTICIPANTS = 4;
+export const MAX_MULTI_SCREEN_SDP_BYTES = 64 * 1024;
+export const MAX_MULTI_SCREEN_ICE_BYTES = 4 * 1024;
 export const SIGNALING_PROTOCOL = "piik-v23";
 export const SIGNAL_CLOSE_CODES = {
   serviceRestart: 1012,
@@ -65,6 +68,39 @@ const opaqueIdSchema = z
   .min(8)
   .max(128)
   .regex(/^[A-Za-z0-9_-]+$/);
+
+export const multiScreenPeerSchema = z.object({
+  peerId: opaqueIdSchema,
+  displayName: displayNameSchema,
+  generation: opaqueIdSchema.nullable(),
+}).strict();
+export type MultiScreenPeer = z.infer<typeof multiScreenPeerSchema>;
+
+const multiScreenSignalMessageSchema = z.object({
+  type: z.literal("multi-screen-signal"),
+  targetPeerId: opaqueIdSchema,
+  sourcePeerId: opaqueIdSchema,
+  generation: opaqueIdSchema,
+  kind: z.enum(["offer", "answer", "ice"]),
+  payload: z.string().min(1).max(MAX_MULTI_SCREEN_SDP_BYTES),
+}).strict().refine(message => {
+  const bytes = new TextEncoder();
+  return bytes.encode(message.payload).length <= (message.kind === "ice" ? MAX_MULTI_SCREEN_ICE_BYTES : MAX_MULTI_SCREEN_SDP_BYTES)
+    && bytes.encode(JSON.stringify(message)).length <= MAX_SIGNAL_BYTES;
+}, { message: "Screen signal exceeds its payload or frame limit" });
+export type MultiScreenSignalMessage = z.infer<typeof multiScreenSignalMessageSchema>;
+
+const multiScreenRosterMessageSchema = z.object({
+  type: z.literal("multi-screen-roster"),
+  peerId: opaqueIdSchema,
+  transport: z.enum(["p2p", "sfu"]),
+  peers: z.array(multiScreenPeerSchema).min(1).max(MAX_MULTI_SCREEN_PARTICIPANTS),
+}).strict().refine(message => {
+  const ids = message.peers.map(peer => peer.peerId);
+  const generations = message.peers.flatMap(peer => peer.generation ? [peer.generation] : []);
+  return ids.includes(message.peerId) && new Set(ids).size === ids.length
+    && new Set(generations).size === generations.length;
+}, { message: "Screen roster must contain its recipient and unique peers and generations" });
 
 export const interactionPayloadSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("chat"), text: z.string().min(1).max(MAX_CHAT_CODE_POINTS * 2)
@@ -234,6 +270,7 @@ export const runtimeCapabilitiesSchema = z.object({
   natPrediction: z.boolean().default(false),
   roomInteractions: z.boolean().default(false),
   hostRoomSession: z.boolean().default(false),
+  multiScreenRoom1: z.boolean().optional(),
 });
 export type RuntimeCapabilities = z.infer<typeof runtimeCapabilitiesSchema>;
 
@@ -378,6 +415,31 @@ const sfuSignalMessageSchema = z.object({
   return Boolean(message.description) && !message.candidate && (!message.media || message.description?.type === "offer");
 });
 export type SfuSignalMessage = z.infer<typeof sfuSignalMessageSchema>;
+
+const multiScreenSfuConfigMessageSchema = z.object({
+  type: z.literal("multi-screen-sfu-config"),
+  sourcePeerId: opaqueIdSchema,
+  revision: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  publicationGeneration: opaqueIdSchema,
+  connectionId: opaqueIdSchema,
+}).strict();
+export type MultiScreenSfuConfigMessage = z.infer<typeof multiScreenSfuConfigMessageSchema>;
+
+const multiScreenSfuSignalMessageSchema = z.object({
+  type: z.literal("multi-screen-sfu-signal"),
+  sourcePeerId: opaqueIdSchema,
+  signal: sfuSignalMessageSchema,
+}).strict().refine(message => new TextEncoder().encode(JSON.stringify(message)).length <= MAX_SIGNAL_BYTES,
+  { message: "Screen SFU signal exceeds its frame limit" });
+export type MultiScreenSfuSignalMessage = z.infer<typeof multiScreenSfuSignalMessageSchema>;
+
+const multiScreenSfuClosedMessageSchema = z.object({
+  type: z.literal("multi-screen-sfu-closed"),
+  sourcePeerId: opaqueIdSchema,
+  publicationGeneration: opaqueIdSchema,
+  connectionId: opaqueIdSchema,
+}).strict();
+export type MultiScreenSfuClosedMessage = z.infer<typeof multiScreenSfuClosedMessageSchema>;
 
 export const preparedRouteCandidateSchema = z
   .object({
@@ -868,6 +930,11 @@ const signalingChallengeSequenceSchema = z
   .max(Number.MAX_SAFE_INTEGER);
 
 export const clientMessageSchema = z.union([
+  z.object({ type: z.literal("multi-screen-join") }).strict(),
+  z.object({ type: z.literal("multi-screen-state"), generation: opaqueIdSchema.nullable() }).strict(),
+  multiScreenSignalMessageSchema,
+  multiScreenSfuSignalMessageSchema,
+  multiScreenSfuClosedMessageSchema,
   z.object({ type: z.literal("subscribe-room-interactions") }).strict(),
   z.object({ type: z.literal("send-room-interaction"), requestId: opaqueIdSchema,
     payload: interactionPayloadSchema }).strict(),
@@ -1045,6 +1112,13 @@ const authenticatedMessageSchema = z.union([
 ]);
 
 export const serverMessageSchema = z.union([
+  multiScreenRosterMessageSchema,
+  multiScreenSignalMessageSchema,
+  multiScreenSfuConfigMessageSchema,
+  multiScreenSfuSignalMessageSchema,
+  multiScreenSfuClosedMessageSchema,
+  z.object({ type: z.literal("multi-screen-rejected"), command: z.enum(["join", "state", "signal"]),
+    reason: z.enum(["room-full", "not-joined", "invalid-state", "target-unavailable", "forbidden"]) }).strict(),
   z.object({ type: z.literal("room-interactions-ready"), serverTime: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER) }).strict(),
   z.object({ type: z.literal("room-interaction-rejected"), requestId: opaqueIdSchema,
     reason: z.enum(["rate-limited", "target-unavailable", "not-subscribed", "busy"]) }).strict(),

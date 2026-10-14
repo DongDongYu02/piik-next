@@ -24,6 +24,10 @@ type authenticatedSession struct {
 	viewerPresence             bool
 	connectionAttemptProgress4 bool
 	roomSession                bool
+	roomOnly                   bool
+	multiScreen                bool
+	multiScreenGeneration      string
+	multiScreenPublication     *multiScreenPublication
 }
 
 // outbound is one queue item: a text frame or the close frame that ends the

@@ -219,6 +219,16 @@ func DecodeClientMessage(data []byte) (ClientMessage, error) {
 		return nil, err
 	}
 	switch messageType {
+	case "multi-screen-join":
+		return decodeEmptyClientMessage(data, MultiScreenJoinMessage{Type: messageType})
+	case "multi-screen-state":
+		return decodeMultiScreenState(data)
+	case "multi-screen-signal":
+		return decodeMultiScreenSignal(data)
+	case "multi-screen-sfu-signal":
+		return decodeMultiScreenSfuSignal(data)
+	case "multi-screen-sfu-closed":
+		return decodeMultiScreenSfuClosed(data)
 	case "subscribe-room-interactions":
 		return decodeEmptyClientMessage(data, SubscribeRoomInteractionsMessage{Type: messageType})
 	case "send-room-interaction":

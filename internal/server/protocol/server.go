@@ -249,6 +249,18 @@ func DecodeServerMessage(data []byte) (ServerMessage, error) {
 		return nil, err
 	}
 	switch messageType {
+	case "multi-screen-roster":
+		return decodeMultiScreenRoster(data)
+	case "multi-screen-rejected":
+		return decodeMultiScreenRejected(data)
+	case "multi-screen-signal":
+		return decodeMultiScreenSignal(data)
+	case "multi-screen-sfu-config":
+		return decodeMultiScreenSfuConfig(data)
+	case "multi-screen-sfu-signal":
+		return decodeMultiScreenSfuSignal(data)
+	case "multi-screen-sfu-closed":
+		return decodeMultiScreenSfuClosed(data)
 	case "room-interactions-ready":
 		return decodeRoomInteractionsReady(data)
 	case "room-interaction":

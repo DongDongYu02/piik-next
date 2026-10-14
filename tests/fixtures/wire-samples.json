@@ -41,6 +41,60 @@
   },
   "clientMessages": [
     {
+      "name": "multi-screen-join",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-join\"}",
+      "valid": true
+    },
+    {
+      "name": "multi-screen-join-rejects-extra",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-join\",\"roomId\":\"1234\"}",
+      "valid": false
+    },
+    {
+      "name": "multi-screen-state-active",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-state\",\"generation\":\"screen_generation_123\"}",
+      "valid": true
+    },
+    {
+      "name": "multi-screen-state-stop",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-state\",\"generation\":null}",
+      "valid": true
+    },
+    {
+      "name": "multi-screen-state-requires-generation",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-state\"}",
+      "valid": false
+    },
+    {
+      "name": "multi-screen-offer",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-signal\",\"targetPeerId\":\"viewer_peer_1234\",\"sourcePeerId\":\"host_peer_1234\",\"generation\":\"screen_generation_123\",\"kind\":\"offer\",\"payload\":\"v=0\\r\\n\"}",
+      "valid": true
+    },
+    {
+      "name": "multi-screen-ice",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-signal\",\"targetPeerId\":\"host_peer_1234\",\"sourcePeerId\":\"viewer_peer_1234\",\"generation\":\"screen_generation_123\",\"kind\":\"ice\",\"payload\":\"{\\\"candidate\\\":\\\"candidate:1 1 udp 1 127.0.0.1 1234 typ host\\\",\\\"sdpMid\\\":\\\"0\\\"}\"}",
+      "valid": true
+    },
+    {
+      "name": "multi-screen-rejects-empty-payload",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-signal\",\"targetPeerId\":\"viewer_peer_1234\",\"sourcePeerId\":\"host_peer_1234\",\"generation\":\"screen_generation_123\",\"kind\":\"offer\",\"payload\":\"\"}",
+      "valid": false
+    },
+    {
+      "name": "multi-screen-rejects-unknown-kind",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-signal\",\"targetPeerId\":\"viewer_peer_1234\",\"sourcePeerId\":\"host_peer_1234\",\"generation\":\"screen_generation_123\",\"kind\":\"rollback\",\"payload\":\"v=0\"}",
+      "valid": false
+    },
+    {
       "name": "authenticate-host-minimal",
       "schema": "client",
       "json": "{\"type\":\"authenticate\",\"protocol\":\"piik-v23\",\"roomId\":\"1234\",\"role\":\"host\",\"token\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"clientId\":\"client_12345678\"}",
@@ -1047,9 +1101,51 @@
       "schema": "client",
       "json": "{\"type\":\"send-room-interaction\",\"requestId\":\"request_12345678\",\"payload\":{\"kind\":\"reaction\",\"reaction\":\"wave\"}}",
       "valid": true
+    },
+    {
+      "name": "multi-screen-sfu-publisher-offer",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-sfu-signal\",\"sourcePeerId\":\"source_peer_1234\",\"signal\":{\"type\":\"sfu-signal\",\"revision\":1,\"publicationGeneration\":\"screen_generation_123\",\"connectionId\":\"sfu_connection_1234\",\"kind\":\"description\",\"description\":{\"type\":\"offer\",\"sdp\":\"v=0\\r\\n\"},\"media\":{\"codec\":\"vp8\",\"layers\":[{\"rid\":\"\",\"width\":1920,\"height\":1080,\"bitrate\":8000000}],\"audio\":false,\"audioBitrate\":0}}}",
+      "valid": true
+    },
+    {
+      "name": "multi-screen-sfu-closed",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-sfu-closed\",\"sourcePeerId\":\"source_peer_1234\",\"publicationGeneration\":\"screen_generation_123\",\"connectionId\":\"sfu_connection_1234\"}",
+      "valid": true
+    },
+    {
+      "name": "multi-screen-sfu-rejects-invalid-inner-type",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-sfu-signal\",\"sourcePeerId\":\"source_peer_1234\",\"signal\":{\"type\":\"multi-screen-signal\",\"revision\":1,\"publicationGeneration\":\"screen_generation_123\",\"connectionId\":\"sfu_connection_1234\",\"kind\":\"description\",\"description\":{\"type\":\"offer\",\"sdp\":\"v=0\\r\\n\"},\"media\":{\"codec\":\"vp8\",\"layers\":[{\"rid\":\"\",\"width\":1920,\"height\":1080,\"bitrate\":8000000}],\"audio\":false,\"audioBitrate\":0}}}",
+      "valid": false
+    },
+    {
+      "name": "multi-screen-sfu-rejects-unknown-inner-field",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-sfu-signal\",\"sourcePeerId\":\"source_peer_1234\",\"signal\":{\"type\":\"sfu-signal\",\"revision\":1,\"publicationGeneration\":\"screen_generation_123\",\"connectionId\":\"sfu_connection_1234\",\"kind\":\"description\",\"description\":{\"type\":\"offer\",\"sdp\":\"v=0\\r\\n\"},\"media\":{\"codec\":\"vp8\",\"layers\":[{\"rid\":\"\",\"width\":1920,\"height\":1080,\"bitrate\":8000000}],\"audio\":false,\"audioBitrate\":0},\"untrusted\":true}}",
+      "valid": false
+    },
+    {
+      "name": "multi-screen-sfu-rejects-invalid-source",
+      "schema": "client",
+      "json": "{\"type\":\"multi-screen-sfu-closed\",\"sourcePeerId\":\"bad\",\"publicationGeneration\":\"screen_generation_123\",\"connectionId\":\"sfu_connection_1234\"}",
+      "valid": false
     }
   ],
   "serverMessages": [
+    {
+      "name": "multi-screen-roster",
+      "json": "{\"type\":\"multi-screen-roster\",\"peerId\":\"host_peer_1234\",\"peers\":[{\"peerId\":\"host_peer_1234\",\"displayName\":\"房主\",\"generation\":\"screen_generation_123\"},{\"peerId\":\"viewer_peer_1234\",\"displayName\":\"朋友\",\"generation\":null}],\"transport\":\"p2p\"}"
+    },
+    {
+      "name": "multi-screen-rejected",
+      "json": "{\"type\":\"multi-screen-rejected\",\"command\":\"join\",\"reason\":\"room-full\"}"
+    },
+    {
+      "name": "multi-screen-forwarded-answer",
+      "json": "{\"type\":\"multi-screen-signal\",\"targetPeerId\":\"host_peer_1234\",\"sourcePeerId\":\"viewer_peer_1234\",\"generation\":\"screen_generation_123\",\"kind\":\"answer\",\"payload\":\"v=0\\r\\n\"}"
+    },
     {
       "name": "authenticated-host-minimal",
       "json": "{\"type\":\"authenticated\",\"protocol\":\"piik-v23\",\"peerId\":\"host_12345678\",\"maxViewers\":8,\"endpointMediaCopyCapacity\":2,\"hostOnline\":true,\"connectionId\":null,\"iceConfig\":{\"iceServers\":[],\"natPredictionStunUrls\":[]},\"routePolicy\":{\"peerOnly\":false,\"topologyOptimization\":true,\"natPrediction\":false},\"codeEntryPolicy\":\"open\",\"viewerAuthorizationGeneration\":\"viewer_generation_12345678\",\"mediaMode\":\"peer-assisted\",\"shareGeneration\":\"share_generation_12345678\",\"routeRevision\":0,\"routeAssignment\":{\"upstream\":{\"kind\":\"none\"},\"childPeerIds\":[],\"sfuPublicationGeneration\":null},\"qualitySettings\":{\"resolution\":\"1080p\",\"maxFramerate\":60,\"maxBitrate\":8000000,\"degradationPreference\":\"maintain-resolution\",\"screenAudioQuality\":\"music\"},\"role\":\"host\",\"viewerPasswordEnabled\":false}"
@@ -1193,6 +1289,22 @@
     {
       "name": "room-interaction",
       "json": "{\"type\":\"room-interaction\",\"id\":\"event_12345678\",\"requestId\":\"request_12345678\",\"occurredAt\":1700000000010,\"sender\":{\"peerId\":\"peer_12345678\",\"role\":\"host\",\"displayName\":\"Piik friend\"},\"payload\":{\"kind\":\"chat\",\"text\":\"来，看点好康的。 <b>Hello</b> 👋\"}}"
+    },
+    {
+      "name": "multi-screen-sfu-config",
+      "json": "{\"type\":\"multi-screen-sfu-config\",\"sourcePeerId\":\"source_peer_1234\",\"revision\":1,\"publicationGeneration\":\"screen_generation_123\",\"connectionId\":\"sfu_connection_1234\"}"
+    },
+    {
+      "name": "multi-screen-sfu-subscriber-offer",
+      "json": "{\"type\":\"multi-screen-sfu-signal\",\"sourcePeerId\":\"source_peer_1234\",\"signal\":{\"type\":\"sfu-signal\",\"revision\":1,\"publicationGeneration\":\"screen_generation_123\",\"connectionId\":\"sfu_connection_1234\",\"kind\":\"description\",\"description\":{\"type\":\"offer\",\"sdp\":\"v=0\\r\\n\"}}}"
+    },
+    {
+      "name": "multi-screen-sfu-closed",
+      "json": "{\"type\":\"multi-screen-sfu-closed\",\"sourcePeerId\":\"source_peer_1234\",\"publicationGeneration\":\"screen_generation_123\",\"connectionId\":\"sfu_connection_1234\"}"
+    },
+    {
+      "name": "multi-screen-roster-sfu",
+      "json": "{\"type\":\"multi-screen-roster\",\"peerId\":\"host_peer_1234\",\"peers\":[{\"peerId\":\"host_peer_1234\",\"displayName\":\"房主\",\"generation\":\"screen_generation_123\"},{\"peerId\":\"viewer_peer_1234\",\"displayName\":\"朋友\",\"generation\":null}],\"transport\":\"sfu\"}"
     }
   ]
 }

@@ -84,6 +84,7 @@ func (s *Server) route(
 			NatPrediction:              s.config.NATPredictionEnabled && !(s.config.SFU != nil && s.config.SFU.Only),
 			RoomInteractions:           true,
 			HostRoomSession:            true,
+			MultiScreenRoom1:           true,
 		})
 		return
 	}

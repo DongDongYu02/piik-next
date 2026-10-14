@@ -453,6 +453,7 @@ func (s *Server) Close(ctx context.Context) error {
 	sessions := s.sessions.Keys()
 	for _, sess := range sessions {
 		sess.clearAuthenticationTimer()
+		s.removeMultiScreen(sess)
 		sess.close(websocket.StatusServiceRestart, "Service restart")
 	}
 
@@ -684,6 +685,10 @@ func (s *Server) handleMessage(sess *session, encoded []byte) {
 	}
 	message, err := protocol.DecodeClientMessage(encoded)
 	if err != nil {
+		if command := protocol.MultiScreenCommand(encoded); command != "" && sess.authenticated != nil && s.isCurrentSession(sess) {
+			s.rejectMultiScreen(sess, command, "invalid-state")
+			return
+		}
 		s.rejectInvalidMessage(sess)
 		return
 	}
@@ -789,6 +794,16 @@ func displayNameString(name *protocol.DisplayName) *string {
 // section. Password checks run in a goroutine so the reader can keep reading
 // while the KDF runs.
 func (s *Server) authenticate(sess *session, request authRequest) {
+	if request.role == protocol.RoleHost && !request.roomOnly && len(s.multiScreenPeers(request.roomID)) > 0 {
+		if _, err := s.store.HostManagedRoom(request.roomID, request.token); err != nil {
+			s.authenticationFailed(sess, request, err)
+		} else {
+			s.sendError(sess, "FORBIDDEN", "This room is using multi-screen sharing")
+			sess.close(websocket.StatusCode(protocol.SignalCloseAuthenticationFailed), "Media mode conflict")
+		}
+		s.finishAuthenticating(sess)
+		return
+	}
 	// Reject the conflicting preference before acquiring room or media authority,
 	// including reconnects from older pages. Never turn peer-only into SFU consent.
 	if request.role == protocol.RoleHost && !request.roomOnly && s.router.sfuOnly && request.routePolicy.PeerOnly {
@@ -929,6 +944,7 @@ func (s *Server) completeAuthentication(sess *session, request authRequest, part
 		viewerPresence:             request.viewerPresence,
 		connectionAttemptProgress4: request.connectionAttemptProgress4,
 		roomSession:                request.roomSession,
+		roomOnly:                   request.roomOnly,
 	}
 	sess.authenticated = authenticated
 	if participant.Role == protocol.RoleViewer {
@@ -1031,6 +1047,7 @@ func (s *Server) completeAuthentication(sess *session, request authRequest, part
 	}
 	if participant.ReplacedSessionID != "" {
 		if replaced := s.sessionsByID[participant.ReplacedSessionID]; replaced != nil && replaced != sess {
+			s.removeMultiScreen(replaced)
 			replaced.close(websocket.StatusCode(protocol.SignalCloseSessionReplaced), "Session replaced")
 		}
 	}
@@ -1211,6 +1228,16 @@ func routeParticipant(sess *session, authenticated *authenticatedSession) authen
 
 func (s *Server) handleAuthenticatedMessage(sess *session, authenticated *authenticatedSession, message protocol.ClientMessage) {
 	switch m := message.(type) {
+	case protocol.MultiScreenJoinMessage:
+		s.joinMultiScreen(sess, authenticated)
+	case protocol.MultiScreenStateMessage:
+		s.setMultiScreenState(sess, authenticated, m)
+	case protocol.MultiScreenSignalMessage:
+		s.relayMultiScreenSignal(sess, authenticated, m)
+	case protocol.MultiScreenSfuSignalMessage:
+		s.handleMultiScreenSfuSignal(sess, authenticated, m)
+	case protocol.MultiScreenSfuClosedMessage:
+		s.handleMultiScreenSfuClosed(sess, authenticated, m)
 	case protocol.SubscribeRoomInteractionsMessage:
 		// Explicit opt-in protects older v23 readers from unknown events.
 		sess.roomInteractions = true
@@ -1307,13 +1334,16 @@ func (s *Server) handleAuthenticatedMessage(sess *session, authenticated *authen
 			s.router.resetSenderQuality(routeParticipant(sess, authenticated))
 		}
 	case protocol.SetDisplayNameMessage:
-		if authenticated.role == protocol.RoleHost && !authenticated.viewerPresence {
+		if authenticated.role == protocol.RoleHost && !authenticated.viewerPresence && !authenticated.multiScreen {
 			s.sendError(sess, "FORBIDDEN", "Display names require the Web presence capability")
 			return
 		}
 		name := string(m.DisplayName)
 		authenticated.displayName = &name
 		s.sendViewerPresence(authenticated.roomID)
+		if authenticated.multiScreen {
+			s.sendMultiScreenRoster(authenticated.roomID)
+		}
 	case protocol.SetSharingPausedMessage:
 		if authenticated.role != protocol.RoleHost {
 			s.sendError(sess, "FORBIDDEN", "只有当前房主可以暂停分享")
@@ -1385,6 +1415,11 @@ func (s *Server) handleAuthenticatedMessage(sess *session, authenticated *authen
 // authenticated Host participant. Room interactions therefore keep the same
 // session while the media graph is rebuilt for the new source.
 func (s *Server) startSharing(sess *session, authenticated *authenticatedSession, message protocol.StartSharingMessage) {
+	if len(s.multiScreenPeers(authenticated.roomID)) > 0 {
+		s.send(sess, protocol.SharingStartFailedMessage{Type: "sharing-start-failed",
+			ShareGeneration: message.ShareGeneration, Code: "FORBIDDEN"})
+		return
+	}
 	if authenticated.role != protocol.RoleHost {
 		s.sendError(sess, "FORBIDDEN", "Only the host may start sharing")
 		return

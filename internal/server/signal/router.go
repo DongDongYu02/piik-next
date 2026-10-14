@@ -1035,7 +1035,7 @@ func (r *router) clearRoom(roomID string) {
 	r.rooms.Delete(roomID)
 	r.resourceWaiters.Delete(roomID)
 	if r.sfu != nil {
-		for _, fence := range r.sfu.admission.BeginDrainRoom(roomID) {
+		for _, fence := range r.sfu.admission.BeginPublisherDrain(roomID, "") {
 			r.scheduleSfuPublicationDrain(fence)
 		}
 	}

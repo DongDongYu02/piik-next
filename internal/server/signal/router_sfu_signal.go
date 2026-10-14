@@ -210,6 +210,10 @@ func sfuConnectionPhase(snapshot route.RouteSnapshot, role protocol.Role, peerID
 func (s *Server) HandleSfuMediaEvent(event sfu.MediaEvent) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if event.Fence.PublisherPeerID != "" {
+		s.handleMultiScreenSfuMediaEvent(event)
+		return
+	}
 	s.router.handleSfuMediaEvent(event)
 }
 

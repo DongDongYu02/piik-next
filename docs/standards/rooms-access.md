@@ -178,3 +178,16 @@ The Host Browser may persist its creation preferences, including policy and an
 optional room password. Raw Viewer grants never enter `localStorage`, cookies,
 queries, server logs, or SQLite. Credentials, passwords, and invitation URLs are
 never committed to the repository.
+
+## Browser Multi-Screen Rooms
+
+The `/multi` Browser mode reuses the same room ownership, code entry and Viewer
+invitation authority. Host remains the access-management role; each enrolled
+participant, including Viewers, may publish one screen. At most four participants
+may enroll, including the Host. Unenrolled sessions cannot send or receive this
+mode's media signaling. SFU publication and subscription are authorized by the
+same current-session, room-membership and source-generation checks; a Viewer
+cannot publish or subscribe as another participant. Disconnect, session
+replacement and invitation revocation remove the exact participant and its
+publication/subscriptions. Original Host broadcasting and multi-screen enrollment
+cannot run concurrently in the same room.
